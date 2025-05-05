@@ -6,12 +6,17 @@ import logo from "../assets/logo.png";
 const loginUrl = import.meta.env.VITE_LOGIN_URL;
 const forgotPasswordUrl = import.meta.env.VITE_FORGOT_PASSWORD_URL;
 
+if (!loginUrl) {
+  console.error('VITE_LOGIN_URL is not defined in environment variables');
+}
+
 const Login = () => {
   const navigate = useNavigate();
   const [values, setValues] = useState({
     email: "",
     password: "",
   });
+  const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
@@ -26,20 +31,41 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+
+    // Validate inputs
+    if (!values.email || !values.password) {
+      setError("Email and password are required");
+      return;
+    }
+
     try {
+      console.log('Attempting login with:', { email: values.email }); // Don't log password
       const response = await axios.post(loginUrl, values);
-      console.log(response.data);
-      console.log(response);
-      if (response.status === 200) {
+      console.log('Login response:', response.data);
+
+      if (response.status === 200 && response.data.token) {
+        // Store user data
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("email", response.data.user.email);
         localStorage.setItem("username", response.data.user.username);
-        navigate("/");
+        
+        // Add a small delay before navigation
+        setTimeout(() => {
+          navigate("/");
+        }, 100);
+      } else {
+        setError("Invalid response from server");
       }
     } catch (error) {
-      console.error("Login error:", error);
-      alert(
-        "Login failed. Please check your username and password and try again."
+      console.error("Login error details:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      setError(
+        error.response?.data?.message || 
+        "Login failed. Please check your credentials."
       );
     }
   };
@@ -77,6 +103,11 @@ const Login = () => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="mt-6">
+          {error && (
+            <div className="mb-4 p-2 bg-red-50 text-red-500 rounded text-sm">
+              {error}
+            </div>
+          )}
           <div className="mb-4">
             <label
               htmlFor="email"
@@ -88,10 +119,11 @@ const Login = () => {
               type="email"
               id="email"
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
-              placeholder="Email"
-              value="apply@superlabs.co"
+              placeholder="Enter your email"
+              value={values.email}
               name="email"
               onChange={handleChanges}
+              required
             />
           </div>
 
@@ -106,10 +138,12 @@ const Login = () => {
               type={showPassword ? "text" : "password"}
               id="password"
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
-              placeholder="Password"
+              placeholder="Enter your password"
               name="password"
-              value="supersecret"
+              value={values.password}
               onChange={handleChanges}
+              required
+              minLength={6}
             />
             {/* Toggle Password Visibility */}
             <button

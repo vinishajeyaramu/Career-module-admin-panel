@@ -39,38 +39,37 @@ const AddUsers = ({ onClose, onSubmit, editData }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
-    if (editData) {
-      axios
-        .put(`${usersUrl}/${editData.id}`, {
+    try {
+      if (editData) {
+        const response = await axios.put(`${usersUrl}/${editData.id}`, {
           username: userName,
           password: userCredit,
           email: userEmail,
-        })
-        .then((res) => {
-          onSubmit(res.data, "update");
-          toast.success("User updated successfully!");
-        })
-        .catch((err) => console.log("Error updating user:", err));
-    } else {
-      axios
-        .post(registerUrl, {
+        });
+        
+        onSubmit(response.data, "update");
+        toast.success("User updated successfully!");
+      } else {
+        const response = await axios.post(registerUrl, {
           username: userName,
           password: userCredit,
           email: userEmail,
-        })
-        .then((res) => {
-          onSubmit(res.data, "add");
-          setUserName("");
-          setUserCredit("");
-          setUserEmail("");
-          setErrors({});
-          toast.success("User added successfully!");
-        })
-        .catch((err) => console.log("Error adding user:", err));
+        });
+        
+        onSubmit(response.data, "add");
+        setUserName("");
+        setUserCredit("");
+        setUserEmail("");
+        setErrors({});
+        toast.success("User added successfully!");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error(error.response?.data?.message || "Operation failed");
     }
   };
 
@@ -142,25 +141,24 @@ const Users = () => {
     fetchUsers();
   }, []);
 
-  const fetchUsers = () => {
-    axios
-      .get(usersUrl)
-      .then((response) => {
+  const fetchUsers = async () => {
+    try {
+      const response = await axios.get(usersUrl);
+      if (Array.isArray(response.data)) {
         setUsers(response.data);
-      })
-      .catch((err) => console.error("Error fetching users:", err));
+      } else {
+        console.error("Invalid response format:", response.data);
+        toast.error("Error fetching users");
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      toast.error("Failed to fetch users");
+    }
   };
 
   const handleFormSubmit = (updatedUser, action) => {
-    if (action === "add") {
-      setUsers((prevUsers) => [...prevUsers, updatedUser]);
-    } else if (action === "update") {
-      setUsers((prevUsers) =>
-        prevUsers.map((user) =>
-          user.id === updatedUser.id ? updatedUser : user
-        )
-      );
-    }
+    // Fetch fresh data after add/update
+    fetchUsers();
     setUserForm(false);
     setEditData(null);
   };

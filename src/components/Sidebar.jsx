@@ -181,9 +181,9 @@ function Sidebar() {
           </Link>
           <p className="bg-gray-300 h-[1px]"></p>
           <br />
-          {/* <Link to={'/users'} className={`block m-2 py-3 px-4 rounded-md text-gray-700 hover:bg-blue-100 transition ${
+          <Link to={'/users'} className={`block m-2 py-3 px-4 rounded-md text-gray-700 hover:bg-blue-100 transition ${
                   location.pathname === '/users' ? "bg-blue-500 hover:bg-blue-700 text-white" : ""
-                }`}>Add Users</Link> */}
+                }`}>Add Users</Link>
         </nav>
         <div className="p-5 mt-auto">
           {/* <div>
